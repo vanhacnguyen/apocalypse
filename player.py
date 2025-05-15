@@ -1,4 +1,5 @@
 import pygame
+from bullet import Bullet
 from colors import *
 
 class Player():
@@ -7,8 +8,7 @@ class Player():
         self.image_scale = data['scale']
         self.offset_list = data['offsets']
         self.animations = {} # store all animation frames
-        # keep track of what the player doing (running, attacking, walking, etc.)
-        self.action = 'idle'
+        self.action = 'idle' # keep track of what the player doing (running, attacking, walking, etc.)
         self.frame_index = 0
         self.image = None # keep track of what frame im in
         self.update_time = pygame.time.get_ticks()
@@ -19,8 +19,15 @@ class Player():
         self.running = False
         self.jump = False
         self.attacking = False
+        self.ammo = 30
+        self.start_ammo = 30
+        self.shot = False
+        self.shoot_cooldown = 0
+        self.bullet_img = pygame.image.load('bullet.png').convert_alpha()
+        self.bullet_group = pygame.sprite.Group()  # create group of bullets here
         self.hurt = False
         self.attack_cooldown = 0
+        self.shoot_cooldown = 0
         self.dead = False
         self.health = 100
     
@@ -35,7 +42,6 @@ class Player():
         self.animations[action_name] = frames # store complete animation in a list under its action
 
     def draw(self, surface):
-        pygame.draw.rect(surface, red, self.rect)
         current_offset = self.offset_list
         if self.flip:
             image_to_draw = pygame.transform.flip(self.image, True, False)  # flip horizontally
@@ -49,7 +55,7 @@ class Player():
         )
     )
     
-    def move(self, screen_width, screen_height, surface, target):
+    def move(self, screen_width, screen_height, target):
         SPEED = 4
         GRAVITY = 2
         GROUND_LEVEL = screen_height - 40
@@ -58,15 +64,15 @@ class Player():
         self.walking = False
         self.running = False
 
-        # can only perform other actions if not attacking
-        if self.attacking == False:
+        # can only perform other actions if not attacking or shooting
+        if self.attacking == False and self.shot == False:
             # walk left/right
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_a] or keys[pygame.K_RIGHT]:
+            if keys[pygame.K_a]:
                 dx -= SPEED
                 self.walking = True
                 self.flip = True
-            if keys[pygame.K_d] or keys[pygame.K_LEFT]:
+            if keys[pygame.K_d]:
                 dx += SPEED
                 self.flip = False
                 self.walking = True
@@ -93,8 +99,9 @@ class Player():
 
             # attack 
             if keys[pygame.K_q]:
-                self.attack(surface, target)
-
+                self.attack(target)
+            if keys[pygame.K_SPACE]:
+                self.shoot()
 
         #ensure player stays on screen
         if self.rect.left + dx < 0:
@@ -105,7 +112,7 @@ class Player():
             self.vel_y = 0
             self.jump = False
             dy = GROUND_LEVEL - self.rect.bottom
-        # apply attack cooldown
+        # apply attack cooldown and shoot cooldown
         if self.attack_cooldown > 0:
             self.attack_cooldown -= 1
 
@@ -116,13 +123,14 @@ class Player():
     # handle animation updates
     def update(self):
         # check what action player is performing
-        # Determine action based on player state
         if self.health <= 0:
             self.health = 0
             self.dead = True
-            self.action = 'dead'
+            new_action = 'dead'
         elif self.hurt:
             new_action = 'hurt'
+        elif self.shot:
+            new_action = 'shoot'
         elif self.attacking:
             new_action = 'attack'
         elif self.running:
@@ -157,8 +165,10 @@ class Player():
                     self.attack_cooldown = 30
                 if self.action == 'hurt':
                     self.hurt = False
-
-    def attack(self, surface, target):
+                if self.action == 'shoot':
+                    self.shot = False
+    
+    def attack(self, target):
         if self.attack_cooldown == 0:
             self.attacking = True
             # adjust attack based on flip
@@ -166,4 +176,17 @@ class Player():
             attacking_rect = pygame.Rect(attack_x, self.rect.y, self.rect.width - 10, self.rect.height)
             if attacking_rect.colliderect(target.rect):
                 target.health -= 25
-            pygame.draw.rect(surface, green, attacking_rect)
+
+    def shoot(self):
+        if self.ammo > 0:
+            self.shot = True
+            # create bullet at gun position (adjust offsets as needed)
+            bullet_x = self.rect.left - 20 if self.flip else self.rect.right + 20
+            bullet_y = self.rect.centery - 25  # adjust for gun height
+            
+            # add to sprite group
+            new_bullet = Bullet(bullet_x, bullet_y, self.flip, self.bullet_img)
+            self.bullet_group.add(new_bullet)
+            
+            # reduce ammo
+            self.ammo -= 1
