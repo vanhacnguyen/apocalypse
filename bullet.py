@@ -6,7 +6,6 @@ class Bullet(pygame.sprite.Sprite):
         self.speed = 10
         self.damage = 50
         self.image = bullet_img
-        # Create a red rectangle surface
         self.rect = self.image.get_rect()
         self.direction = -1 if flip else 1  # reverse if player is flipped
         self.image = bullet_img
@@ -29,7 +28,7 @@ class Bullet(pygame.sprite.Sprite):
         
         # check for zombie collisions
         for zombie in zombies:
-            if self.rect.colliderect(zombie.rect):
+            if zombie.is_collidable() and self.rect.colliderect(zombie.rect):
                 zombie.health -= self.damage
                 zombie.hurt = True  # trigger hurt animation
                 self.kill()  # remove bullet when hitting zombie
