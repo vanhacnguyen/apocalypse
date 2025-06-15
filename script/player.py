@@ -8,7 +8,6 @@ mixer.init()
 
 class Player():
     def __init__(self, x, y, data):
-        # store image and animation frames
         self.size = data['frame_size']
         self.image_scale = data['scale']
         self.offset_list = data['offsets']
@@ -31,7 +30,7 @@ class Player():
         self.recharge_gun = False
         self.shot = False
         self.shoot_cooldown = 0
-        self.bullet_img = pygame.image.load('bullet.png').convert_alpha()
+        self.bullet_img = pygame.image.load('assets/bullet.png').convert_alpha()
         self.bullet_group = pygame.sprite.Group()  # create group of bullets here
         self.hurt = False
         self.attack_cooldown = 0
@@ -48,6 +47,9 @@ class Player():
         self.shooting_sound = pygame.mixer.Sound('music_and_sound/gun_shot_sound.mp3')
         self.shooting_sound.set_volume(0.1)
         self.swinging_sound = pygame.mixer.Sound('music_and_sound/swinging_sound.mp3')
+    
+    def reset(self, x, y, data): # reset the game (not done, has error)
+        self.__init__(x, y, data)
     
     def load_animation(self, action_name, sprite_sheet_path, frame_count):
         # load a specific animation from its sprite_sheet
@@ -222,7 +224,7 @@ class Player():
                 self.reloading_sound.play()
                 self.ammo += can_take
                 self.max_ammo -= can_take
-                
+    
     def draw(self, surface):
         current_offset = self.offset_list
         self.health_bar.hp = self.health

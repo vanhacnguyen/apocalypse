@@ -1,10 +1,14 @@
 import pygame
 import random
 from health_bar import Health_bar
+from item_box import ItemBox
 from colors import *
+from pygame import mixer
+
+mixer.init()
 
 class Zombie():
-    def __init__(self, x, y, data):
+    def __init__(self, x, y, data, hp = 100, damage = 10, speed = 1, score = 1):
         self.size = data['frame_size']
         self.image_scale = data['scale']
         self.offset_list = data['offsets']
@@ -15,13 +19,16 @@ class Zombie():
         self.image = None # keep track of what frame im in
         self.update_time = pygame.time.get_ticks()
         self.rect = pygame.Rect(x, y, 37, 85) # hit box
-        self.health = 100
-        self.max_health = 100
+        self.score_value = score # point worth of this zombie
+        self.given_score = False # track if score is counted
+        self.health = hp
+        self.max_health = hp
         self.health_bar = Health_bar(x, y - 20, 60, 10, self.health, self.max_health)
         self.walking = False
         self.running = False
         self.hurt = False
         self.dead = False
+        self.attack_damage = damage
         self.attacking = False
         self.attack_cooldown = 0
         self.vision = pygame.Rect(0, 0, 200, 100) # how far zombie can look
@@ -30,7 +37,7 @@ class Zombie():
         self.move_direction = 1  # 1 for right, -1 for left
         self.move_counter = 0
         self.patrol_distance = 100  # how far the zombie will walk before turning around
-        self.speed = 1  # movement speed
+        self.speed = speed  # movement speed
         self.idling = False
         self.idling_counter = 0
 
@@ -42,7 +49,7 @@ class Zombie():
             frame = sheet.subsurface(x * self.size, 0, self.size, self.size)
             scaled_frame = pygame.transform.scale(frame, (self.size * self.image_scale, self.size * self.image_scale))
             frames.append(scaled_frame)
-        self.animations[action_name] = frames # store complete animation in a list under its action
+        self.animations[action_name] = frames # store complete animation in a list under its action name in a dictionary
     
     def ai(self, screen_width, screen_height, target, screen):
         if not self.dead and not target.dead:
@@ -126,9 +133,14 @@ class Zombie():
         self.rect.x += dx
         self.rect.y += dy
 
-    def update(self):
+    def update(self, item_box_group, player, score_system):
         # check what action zombie is performing
         if self.health <= 0:
+            if not self.dead:
+                self.drop_item(item_box_group, player)
+            if not self.given_score:
+                score_system.add_score(self.score_value)
+                self.given_score = True
             self.health = 0
             self.dead = True
             new_action = 'dead'
@@ -180,10 +192,17 @@ class Zombie():
             attack_x = self.rect.left - attack_range if self.move_direction < 0 else self.rect.right
             attacking_rect = pygame.Rect(attack_x, self.rect.y, attack_range, self.rect.height)
             if attacking_rect.colliderect(target.rect):
-                target.health -= 5
+                target.health -= self.attack_damage 
                 target.hurt = True  # Assuming your player class has a hurt state      
             self.attack_cooldown = 30
 
+    def drop_item(self, item_box_group, player):
+        # randomly drop item when zombie dies
+        if random.random() < 0.8:
+            item_type = random.choice(['health', 'ammo'])
+            item_box = ItemBox(item_type, self.rect.centerx, self.rect.centery + 10, player)
+            item_box_group.add(item_box)
+            
 
     def draw(self, surface):
         pygame.draw.rect(surface, blue, self.rect)

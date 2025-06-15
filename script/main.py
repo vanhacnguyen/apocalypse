@@ -2,6 +2,8 @@ import pygame
 from pygame import mixer
 from player import Player
 from zombie import Zombie
+from item_box import ItemBox
+from score_system import ScoreSystem
 from colors import *
 
 pygame.init()
@@ -14,12 +16,12 @@ pygame.mixer.music.set_volume(0.25)
 
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 600
 window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-forest_bg = pygame.image.load("forest_bg.jpg").convert_alpha()
+forest_bg = pygame.image.load("assets/forest_bg.jpg").convert_alpha()
 forest_bg = pygame.transform.scale(forest_bg, (800, 600))
-game_over_img = pygame.image.load("game_over.png").convert_alpha()
+game_over_img = pygame.image.load("assets/game_over.png").convert_alpha()
 game_over_img = pygame.transform.scale(game_over_img, (300, 200))
-
-start_img = pygame.image.load('start_btn.png').convert_alpha()
+start_img = pygame.image.load('assets/start_btn.png').convert_alpha()
+player_score = 0
 
 class Button():
     def __init__(self, x, y, image, scale):
@@ -53,53 +55,13 @@ start_button = Button(325, 325, start_img, 0.5)
 
 pygame.font.init()
 #define font
-font = pygame.font.Font('Minecraft.ttf', 25)
+font = pygame.font.Font('assets/Minecraft.ttf', 25)
 
 def draw_text(text, font, text_color, x, y):
     img = font.render(text, True, text_color)
+    score = font.render(text, True, text_color)
     window.blit(img, (x, y))
-
-# load collectible items image
-health_box_img = pygame.image.load("health_box.png").convert_alpha()
-ammo_box_img = pygame.image.load("ammo.png").convert_alpha()
-item_boxes = {
-    'health': health_box_img,
-    'ammo': ammo_box_img
-}
-
-class ItemBox(pygame.sprite.Sprite):
-    def __init__(self, item_type, x, y, scale = 1.25):
-        pygame.sprite.Sprite.__init__(self)
-        self.item_type = item_type
-        self.image = item_boxes[item_type]
-        # new dimensions
-        width = int(self.image.get_width() * scale)
-        height = int(self.image.get_height() * scale)
-        self.image = pygame.transform.scale(self.image, (width, height))
-        self.rect = self.image.get_rect()
-        self.rect.midtop = (x + width // 2, y)
-    def update(self):
-        # check if the player has picked up the box
-        if pygame.sprite.collide_rect(self, player):
-            # check what kind of box it was
-            if self.item_type == 'health':
-                player.health += 25
-                if player.health > player.max_health: # only keeps max_health as 100
-                    player.health = player.max_health
-            elif self.item_type == 'ammo':
-                player.max_ammo += 15
-            
-            # delete the item box
-            self.kill()
-
-# create sprite group
-item_box_group = pygame.sprite.Group()
-
-#temporary - create item boxes
-item_box = ItemBox('health', 100, 525)
-item_box_group.add(item_box)
-item_box = ItemBox('ammo', 400, 525)
-item_box_group.add(item_box)
+    window.blit(score, (x, y))
 
 # define player variables
 PLAYER_DATA = {
@@ -120,14 +82,43 @@ player.load_animation('dead', 'player_animation/Dead.png', 4)
 # set initial image
 player.image = player.animations['idle'][0] # first frame of idle
 
+# create sprite group
+item_box_group = pygame.sprite.Group()
+
+#temporary - create item boxes
+item_box = ItemBox('health', -100, -100, player)
+item_box_group.add(item_box)
+item_box = ItemBox('ammo', -100, -100, player)
+item_box_group.add(item_box)  
+
 #load spritesheets
 ZOMBIE_MAN_DATA = { 
     'frame_size': 96,
     'scale': 1.35,
     'offsets': [35, 32]
 }
+WILD_ZOMBIE_DATA = {
+    'frame_size': 96,
+    'scale': 1.35,
+    'offsets': [35, 32]
+}
 
-zombie_man = Zombie(500, 475, ZOMBIE_MAN_DATA)
+ZOMBIE_TYPES = {
+    'normal': {
+        'hp': 100,
+        'damage': 10,
+        'speed': 1,
+        'score': 1
+    },
+    'wild': {
+        'hp': 120,
+        'damage': 15,
+        'speed': 1.5,
+        'score': 2
+    }
+}
+
+zombie_man = Zombie(500, 475, ZOMBIE_MAN_DATA, **ZOMBIE_TYPES['normal']) # unpacking dictionary
 zombie_man.load_animation('idle', 'zombie_man_animation/Idle.png', 8)
 zombie_man.load_animation('walk', 'zombie_man_animation/Walk.png', 8)
 zombie_man.load_animation('run', 'zombie_man_animation/Run.png', 7)
@@ -135,6 +126,13 @@ zombie_man.load_animation('attack', 'zombie_man_animation/Attack_2.png', 4)
 zombie_man.load_animation('hurt', 'zombie_man_animation/Hurt.png', 3)
 zombie_man.load_animation('dead', 'zombie_man_animation/Dead.png', 5)
 
+wild_zombie = Zombie(100, 475, WILD_ZOMBIE_DATA, **ZOMBIE_TYPES['wild'])
+wild_zombie.load_animation('idle', 'wild_zombie_animation/Idle.png', 9)
+wild_zombie.load_animation('walk', 'wild_zombie_animation/Walk.png', 10)
+wild_zombie.load_animation('run', 'wild_zombie_animation/Run.png', 8)
+wild_zombie.load_animation('attack', 'wild_zombie_animation/Attack_2.png', 4)
+wild_zombie.load_animation('hurt', 'wild_zombie_animation/Hurt.png', 5)
+wild_zombie.load_animation('dead', 'wild_zombie_animation/Dead.png', 5)
 
 
 if __name__ == "__main__":
@@ -143,7 +141,7 @@ if __name__ == "__main__":
     # set frame rates
     clock = pygame.time.Clock()
     frames_per_sec = 60
-
+    score_system = ScoreSystem()
     running = True
     while running:
         clock.tick(frames_per_sec)
@@ -153,28 +151,36 @@ if __name__ == "__main__":
         
         # update background
         window.blit(forest_bg, (0,0))
-        # show ammo
+        # show ammo, score, and highest score
         draw_text(f'AMMO: {player.ammo}/{player.max_ammo}', font, white, 40, 75)
+        draw_text(f"SCORE: {score_system.score}", font, white, 40, 110)
+        draw_text(f"HIGH SCORE: {score_system.high_score}", font, white, 40, 150)
+
         player.move(WINDOW_WIDTH, WINDOW_HEIGHT, zombie_man)
         zombie_man.ai(WINDOW_WIDTH, WINDOW_HEIGHT, player, window)
+        wild_zombie.ai(WINDOW_WIDTH, WINDOW_HEIGHT, player, window)
         
         #update everything
         player.update()
-        zombie_man.update()
-        player.bullet_group.update([zombie_man], WINDOW_WIDTH)  # Update bullets with required parameters # pass zombie for collision checking
+        zombie_man.update(item_box_group, player, score_system)
+        wild_zombie.update(item_box_group, player, score_system)
+        player.bullet_group.update([zombie_man, wild_zombie], WINDOW_WIDTH)  # Update bullets and pass zombies for collision checking
         item_box_group.update()
 
         #draw player and zombie
         player.draw(window)
         zombie_man.draw(window)
+        wild_zombie.draw(window)
         item_box_group.draw(window)
 
         # draw bullet groups
         player.bullet_group.draw(window)
+
         if player.dead:
             # display game over
             window.blit(game_over_img, (250, 150))
-            start_button.draw()
+            if start_button.draw(): # not done, has error
+                player.reset(10, 470, PLAYER_DATA) 
             
         pygame.display.update()
     pygame.quit()
