@@ -31,7 +31,7 @@ class Zombie():
         self.attack_damage = damage
         self.attacking = False
         self.attack_cooldown = 0
-        self.vision = pygame.Rect(0, 0, 200, 100) # how far zombie can look
+        self.vision = pygame.Rect(0, 0, 400, 100) # how far zombie can look
 
         # movement variables
         self.move_direction = 1  # 1 for right, -1 for left
@@ -97,7 +97,7 @@ class Zombie():
                     self.move_counter += abs(dx)
                     
                     # update vision as zombie moves
-                    self.vision.center = (self.rect.centerx + 100 * self.move_direction, self.rect.centery)
+                    self.vision.center = (self.rect.centerx + 200 * self.move_direction, self.rect.centery)
                     pygame.draw.rect(screen, (255, 0, 0), self.vision)
 
                     # if moved over the patrol distance, turn around

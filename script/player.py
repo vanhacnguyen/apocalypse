@@ -25,7 +25,7 @@ class Player():
         self.running = False
         self.jump = False
         self.attacking = False
-        self.ammo = 30
+        self.ammo = 15
         self.max_ammo = 30
         self.recharge_gun = False
         self.shot = False
@@ -115,7 +115,7 @@ class Player():
             elif keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
                 self.shoot()
             #recharge
-            elif keys[pygame.K_r]:
+            elif keys[pygame.K_r] and self.hurt == False:
                 self.recharge()
 
         # apply gravity
@@ -148,6 +148,8 @@ class Player():
             new_action = 'dead'
         elif self.hurt:
             new_action = 'hurt'
+            self.attacking = False
+            self.recharge_gun = False
         elif self.shot:
             new_action = 'shoot'
         elif self.recharge_gun:

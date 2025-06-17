@@ -3,7 +3,7 @@ import pygame
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, flip, bullet_img):
         pygame.sprite.Sprite.__init__(self)
-        self.speed = 10
+        self.speed = 15
         self.damage = 40
         self.image = bullet_img
         self.rect = self.image.get_rect()
