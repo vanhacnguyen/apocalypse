@@ -61,7 +61,7 @@ class Player():
             frames.append(scaled_frame)
         self.animations[action_name] = frames # store complete animation in a list under its action
     
-    def move(self, screen_width, screen_height, target):
+    def move(self, screen_width, screen_height, target, window):
         SPEED = 4
         GRAVITY = 2
         GROUND_LEVEL = screen_height - 40
@@ -110,7 +110,7 @@ class Player():
                 self.jump = True
             # attack 
             if keys[pygame.K_q]:
-                self.attack(target)
+                self.attack(target, window)
             # shoot
             elif keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
                 self.shoot()
@@ -148,7 +148,6 @@ class Player():
             new_action = 'dead'
         elif self.hurt:
             new_action = 'hurt'
-            self.attacking = False
             self.recharge_gun = False
         elif self.shot:
             new_action = 'shoot'
@@ -193,15 +192,17 @@ class Player():
                 if self.action == 'recharge':
                     self.recharge_gun = False
     
-    def attack(self, target):
+    def attack(self, targets, window):
         if self.attack_cooldown == 0:
             self.attacking = True
             self.swinging_sound.play()
             # adjust attack based on flip
             attack_x = self.rect.left - 25 if self.flip else self.rect.right
-            attacking_rect = pygame.Rect(attack_x, self.rect.y, self.rect.width - 10, self.rect.height)
-            if attacking_rect.colliderect(target.rect):
-                target.health -= 25
+            attacking_rect = pygame.Rect(attack_x, self.rect.y, self.rect.width + 10, self.rect.height)
+            pygame.draw.rect(window, (255, 0, 0), attacking_rect, 2)
+            for zombie in targets:
+                if attacking_rect.colliderect(zombie.rect): 
+                    zombie.health -= 25
 
     def shoot(self):
         if self.ammo > 0:

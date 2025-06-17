@@ -156,7 +156,7 @@ if __name__ == "__main__":
         draw_text(f"SCORE: {score_system.score}", font, white, 40, 110)
         draw_text(f"HIGH SCORE: {score_system.high_score}", font, white, 40, 140)
 
-        player.move(WINDOW_WIDTH, WINDOW_HEIGHT, zombie_man)
+        player.move(WINDOW_WIDTH, WINDOW_HEIGHT, all_zombies, window)
         
         #update everything
         enemy_spawner.update(current_time, all_zombies, item_box_group, player, score_system, WINDOW_WIDTH, WINDOW_HEIGHT)
