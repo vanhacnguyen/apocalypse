@@ -4,8 +4,6 @@ import pygame
 class ItemBox(pygame.sprite.Sprite):
     def __init__(self, item_type, x, y, player, scale = 1.25):
         pygame.sprite.Sprite.__init__(self)
-        # load collectible items image
-       # load collectible items image
         health_box_img = pygame.image.load("assets/health_box.png").convert_alpha()
         ammo_box_img = pygame.image.load("assets/ammo.png").convert_alpha()
         item_boxes = {
