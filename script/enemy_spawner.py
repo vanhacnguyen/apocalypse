@@ -6,7 +6,7 @@ class EnemySpawner:
     def __init__(self, zombie_types):
         self.zombie_types = zombie_types
         self.spawn_timer = 0
-        self.spawn_interval = 7000  # 5 seconds in milliseconds
+        self.spawn_interval = 4000  # 5 seconds in milliseconds
         self.last_spawn_time = pygame.time.get_ticks()
     
     def update(self, current_time, all_zombies, item_box_group, player, score_system, window_width, window_height):

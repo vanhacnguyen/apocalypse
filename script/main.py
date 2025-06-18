@@ -9,8 +9,10 @@ from colors import *
 
 pygame.init()
 mixer.init()
+
 # load music and sound
 pygame.mixer.music.load('music_and_sound/apocalyptic_forest.mp3')
+game_over_sound = pygame.mixer.Sound('music_and_sound/game_over_sound.mp3')
 pygame.mixer.music.set_volume(0.25)
 # pygame.mixer.music.play(-1, 0.0, 4000)
 
@@ -64,6 +66,33 @@ def draw_text(text, font, text_color, x, y):
     window.blit(img, (x, y))
     window.blit(score, (x, y))
 
+def reset_game():
+    global player, all_zombies, item_box_group, score_system, enemy_spawner
+    
+    player.reset(10, 470, PLAYER_DATA)
+    all_zombies.clear()
+    item_box_group.empty()
+    score_system.score = 0
+    enemy_spawner.last_spawn_time = pygame.time.get_ticks()
+    
+    zombie_man = Zombie(500, 475, ZOMBIE_MAN_DATA, **ZOMBIE_TYPES['normal'])
+    zombie_man.load_animation('idle', 'zombie_man_animation/Idle.png', 8)
+    zombie_man.load_animation('walk', 'zombie_man_animation/Walk.png', 8)
+    zombie_man.load_animation('run', 'zombie_man_animation/Run.png', 7)
+    zombie_man.load_animation('attack', 'zombie_man_animation/Attack_2.png', 4)
+    zombie_man.load_animation('hurt', 'zombie_man_animation/Hurt.png', 3)
+    zombie_man.load_animation('dead', 'zombie_man_animation/Dead.png', 5)
+    
+    wild_zombie = Zombie(100, 475, ZOMBIE_MAN_DATA, **ZOMBIE_TYPES['wild'])
+    wild_zombie.load_animation('idle', 'wild_zombie_animation/Idle.png', 9)
+    wild_zombie.load_animation('walk', 'wild_zombie_animation/Walk.png', 10)
+    wild_zombie.load_animation('run', 'wild_zombie_animation/Run.png', 8)
+    wild_zombie.load_animation('attack', 'wild_zombie_animation/Attack_2.png', 4)
+    wild_zombie.load_animation('hurt', 'wild_zombie_animation/Hurt.png', 5)
+    wild_zombie.load_animation('dead', 'wild_zombie_animation/Dead.png', 5)
+    
+    all_zombies.extend([zombie_man, wild_zombie])
+
 # define player variables
 PLAYER_DATA = {
     'frame_size': 128,
@@ -102,13 +131,13 @@ ZOMBIE_MAN_DATA = {
 ZOMBIE_TYPES = {
     'normal': {
         'hp': 100,
-        'damage': 10,
+        'damage': 5,
         'speed': 1,
         'score': 1
     },
     'wild': {
         'hp': 110,
-        'damage': 15,
+        'damage': 10,
         'speed': 1.5,
         'score': 2
     }
@@ -141,6 +170,7 @@ if __name__ == "__main__":
     frames_per_sec = 60
     score_system = ScoreSystem()
     running = True
+    game_over_sound_played = False
     while running:
         current_time = pygame.time.get_ticks()
         clock.tick(frames_per_sec)
@@ -154,7 +184,7 @@ if __name__ == "__main__":
         # show ammo, score, and highest score
         draw_text(f'AMMO: {player.ammo}/{player.max_ammo}', font, white, 40, 75)
         draw_text(f"SCORE: {score_system.score}", font, white, 40, 110)
-        draw_text(f"HIGH SCORE: {score_system.high_score}", font, white, 40, 140)
+        draw_text(f"HIGHEST SCORE: {score_system.high_score}", font, white, 40, 140)
 
         player.move(WINDOW_WIDTH, WINDOW_HEIGHT, all_zombies, window)
         
@@ -185,9 +215,13 @@ if __name__ == "__main__":
             # display game over
             window.fill(black)
             window.blit(game_over_img, (250, 150))
+            if not game_over_sound_played:
+                game_over_sound.play()
+                game_over_sound_played = True
             if start_button.draw(): # not done, has error
-                player.reset(10, 470, PLAYER_DATA) 
-            
+                reset_game()
+                game_over_sound_played = False  # reset flag for next game over
+
         pygame.display.update()
     pygame.quit()
 

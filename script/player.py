@@ -49,7 +49,27 @@ class Player():
         self.swinging_sound = pygame.mixer.Sound('music_and_sound/swinging_sound.mp3')
     
     def reset(self, x, y, data): # reset the game (not done, has error)
+        # store animations temporarily
+        saved_animations = self.animations.copy() if hasattr(self, 'animations') else {}
         self.__init__(x, y, data)
+
+        # restore animations
+        self.animations = saved_animations
+        
+        # reload animations if they're empty
+        if not self.animations:
+            self.load_animation('idle', 'player_animation/Idle.png', 7)
+            self.load_animation('walk', 'player_animation/Walk.png', 7)
+            self.load_animation('run', 'player_animation/Run.png', 8)
+            self.load_animation('attack', 'player_animation/Attack.png', 3)
+            self.load_animation('shoot', 'player_animation/Shot_2.png', 4)
+            self.load_animation('recharge', 'player_animation/Recharge.png', 13)
+            self.load_animation('hurt', 'player_animation/Hurt.png', 3)
+            self.load_animation('dead', 'player_animation/Dead.png', 4)
+        
+        self.action = 'idle'
+        self.frame_index = 0
+        self.image = self.animations['idle'][0]
     
     def load_animation(self, action_name, sprite_sheet_path, frame_count):
         # load a specific animation from its sprite_sheet
@@ -198,7 +218,7 @@ class Player():
             self.swinging_sound.play()
             # adjust attack based on flip
             attack_x = self.rect.left - 25 if self.flip else self.rect.right
-            attacking_rect = pygame.Rect(attack_x, self.rect.y, self.rect.width + 10, self.rect.height)
+            attacking_rect = pygame.Rect(attack_x - 10, self.rect.y, self.rect.width + 10, self.rect.height)
             pygame.draw.rect(window, (255, 0, 0), attacking_rect, 2)
             for zombie in targets:
                 if attacking_rect.colliderect(zombie.rect): 

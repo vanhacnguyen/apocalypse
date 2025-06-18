@@ -31,15 +31,11 @@ class Zombie():
         self.attack_damage = damage
         self.attacking = False
         self.attack_cooldown = 0
-        self.vision = pygame.Rect(0, 0, 400, 100) # how far zombie can look
+        self.vision = pygame.Rect(0, 0, 800, 100) # how far zombie can look
 
         # movement variables
         self.move_direction = 1  # 1 for right, -1 for left
-        self.move_counter = 0
-        self.patrol_distance = 100  # how far the zombie will walk before turning around
-        self.speed = speed  # movement speed
-        self.idling = False
-        self.idling_counter = 0
+        self.chase_speed = speed + 2  # movement speed
 
     def load_animation(self, action_name, sprite_sheet_path, frame_count):
         # load a specific animation from its sprite_sheet
@@ -53,11 +49,17 @@ class Zombie():
     
     def ai(self, screen_width, screen_height, target, screen):
         if not self.dead and not target.dead:
+            # set direction based on spawn position
+            if self.rect.centerx < target.rect.centerx:
+                self.move_direction = 1  # face right if player is on the right
+            else:
+                self.move_direction = -1  # face left if player is on the left
+            
             self.move(screen_width, screen_height, target, screen)
 
 
     def move(self, screen_width, screen_height, target, screen):
-        SPEED = self.speed
+        SPEED = self.chase_speed
         GRAVITY = 2
         GROUND_LEVEL = screen_height - 40
         dx = 0
@@ -66,10 +68,6 @@ class Zombie():
         self.running = False
         
         if not self.dead and not self.hurt:
-            if self.idling == False and random.randint(1, 200) == 1: # patroling and then stop
-                self.idling = True
-                self.idling_counter = 60
-            
             # check if the zombie is near the player
             if self.vision.colliderect(target.rect):
                 # stop and running to the player
@@ -87,28 +85,11 @@ class Zombie():
                 else:
                     # chase the player
                     self.running = True
-                    dx = self.move_direction * (SPEED + 3)  # faster speed when chasing
+                    dx = self.move_direction * SPEED  # faster speed when chasing
 
-            else:
-                if self.idling == False: 
-                    dx = self.move_direction * SPEED
-                    self.walking = True
-                    # track how far zombie move in current direction
-                    self.move_counter += abs(dx)
-                    
-                    # update vision as zombie moves
-                    self.vision.center = (self.rect.centerx + 200 * self.move_direction, self.rect.centery)
-                    pygame.draw.rect(screen, (255, 0, 0), self.vision)
-
-                    # if moved over the patrol distance, turn around
-                    if self.move_counter > self.patrol_distance:
-                        self.move_direction *= -1  # reverse direction
-                        self.move_counter = 0  # reset counter
-                else:
-                    self.idling_counter -= 1
-                    if self.idling_counter <= 0:
-                        self.idling = False
-        
+        # update vision as zombie moves
+        self.vision.center = (self.rect.centerx + 400 * self.move_direction, self.rect.centery)
+   
         # apply gravity
         if self.rect.bottom + dy < GROUND_LEVEL:
             self.rect.y += dy
