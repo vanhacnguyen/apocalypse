@@ -174,7 +174,8 @@ class Zombie():
             attacking_rect = pygame.Rect(attack_x, self.rect.y, attack_range, self.rect.height)
             if attacking_rect.colliderect(target.rect):
                 target.health -= self.attack_damage 
-                target.hurt = True  # Assuming your player class has a hurt state      
+                target.hurt = True
+
             self.attack_cooldown = 30
 
     def drop_item(self, item_box_group, player):

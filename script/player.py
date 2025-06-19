@@ -25,7 +25,7 @@ class Player():
         self.running = False
         self.jump = False
         self.attacking = False
-        self.ammo = 15
+        self.ammo = 30
         self.max_ammo = 30
         self.recharge_gun = False
         self.shot = False
@@ -48,7 +48,7 @@ class Player():
         self.shooting_sound.set_volume(0.1)
         self.swinging_sound = pygame.mixer.Sound('music_and_sound/swinging_sound.mp3')
     
-    def reset(self, x, y, data): # reset the game (not done, has error)
+    def reset(self, x, y, data): # reset the game
         # store animations temporarily
         saved_animations = self.animations.copy() if hasattr(self, 'animations') else {}
         self.__init__(x, y, data)
@@ -128,15 +128,17 @@ class Player():
             if keys[pygame.K_w] and self.jump == False: # if player isn't jumping, they can jump (prevent double jump)
                 self.vel_y = -25
                 self.jump = True
-            # attack 
-            if keys[pygame.K_q]:
-                self.attack(target, window)
-            # shoot
-            elif keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
-                self.shoot()
-            #recharge
-            elif keys[pygame.K_r] and self.hurt == False:
-                self.recharge()
+            
+            if not self.hurt:
+                # attack 
+                if keys[pygame.K_q]:
+                    self.attack(target, window)
+                # shoot
+                elif keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
+                    self.shoot()
+                #recharge
+                elif keys[pygame.K_r] and self.hurt == False:
+                    self.recharge()
 
         # apply gravity
         self.vel_y += GRAVITY # bring the player down after jumping
@@ -168,6 +170,8 @@ class Player():
             new_action = 'dead'
         elif self.hurt:
             new_action = 'hurt'
+            self.shot = False
+            self.attacking = False
             self.recharge_gun = False
         elif self.shot:
             new_action = 'shoot'
@@ -213,7 +217,7 @@ class Player():
                     self.recharge_gun = False
     
     def attack(self, targets, window):
-        if self.attack_cooldown == 0:
+        if self.attack_cooldown <= 0:
             self.attacking = True
             self.swinging_sound.play()
             # adjust attack based on flip
@@ -223,6 +227,8 @@ class Player():
             for zombie in targets:
                 if attacking_rect.colliderect(zombie.rect): 
                     zombie.health -= 25
+                    knockback = -20 if self.flip else 20
+                    zombie.rect.x += knockback
 
     def shoot(self):
         if self.ammo > 0:

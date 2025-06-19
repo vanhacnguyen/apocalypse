@@ -13,16 +13,19 @@ mixer.init()
 # load music and sound
 pygame.mixer.music.load('music_and_sound/apocalyptic_forest.mp3')
 game_over_sound = pygame.mixer.Sound('music_and_sound/game_over_sound.mp3')
+victory_sound = pygame.mixer.Sound('music_and_sound/victory_sound.mp3')
 pygame.mixer.music.set_volume(0.25)
-# pygame.mixer.music.play(-1, 0.0, 4000)
+pygame.mixer.music.play(-1, 0.0, 4000)
 
 
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 600
 window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 forest_bg = pygame.image.load("assets/forest_bg.jpg").convert_alpha()
 forest_bg = pygame.transform.scale(forest_bg, (800, 600))
+win_bg = pygame.image.load("assets/winning.jpg").convert_alpha()
+win_bg = pygame.transform.scale(win_bg, (800, 600))
 game_over_img = pygame.image.load("assets/game_over_logo.png").convert_alpha()
-game_over_img = pygame.transform.scale(game_over_img, (300, 150))
+game_over_img = pygame.transform.scale(game_over_img, (350, 250))
 restart_img = pygame.image.load('assets/restart_btn.png').convert_alpha()
 player_score = 0
 
@@ -54,7 +57,7 @@ class Button():
         return action
 
 # create button instance
-start_button = Button(325, 325, restart_img, 0.25)
+start_button = Button(275, 440, restart_img, 0.4)
 
 pygame.font.init()
 #define font
@@ -170,7 +173,10 @@ if __name__ == "__main__":
     frames_per_sec = 60
     score_system = ScoreSystem()
     running = True
+    game_state = 'playing'
     game_over_sound_played = False
+    victory_sound_played = False
+
     while running:
         current_time = pygame.time.get_ticks()
         clock.tick(frames_per_sec)
@@ -183,8 +189,8 @@ if __name__ == "__main__":
         window.blit(forest_bg, (0,0))
         # show ammo, score, and highest score
         draw_text(f'AMMO: {player.ammo}/{player.max_ammo}', font, white, 40, 75)
-        draw_text(f"SCORE: {score_system.score}", font, white, 40, 110)
-        draw_text(f"HIGHEST SCORE: {score_system.high_score}", font, white, 40, 140)
+        draw_text(f'SCORE: {score_system.score}', font, white, 40, 110)
+        draw_text(f'HIGHEST SCORE: {score_system.high_score}', font, white, 40, 140)
 
         player.move(WINDOW_WIDTH, WINDOW_HEIGHT, all_zombies, window)
         
@@ -204,23 +210,43 @@ if __name__ == "__main__":
         player.bullet_group.update(all_zombies, WINDOW_WIDTH)  # Update bullets and pass zombies for collision checking
         item_box_group.update()
 
-        #draw player and zombie
+        #draw player and itembox
         player.draw(window)
         item_box_group.draw(window)
 
         # draw bullet groups
         player.bullet_group.draw(window)
 
-        if player.dead:
+
+        # result
+        if game_state == 'playing' and score_system.score == 30:
+            game_state = 'won'
+        elif game_state == 'playing' and player.dead:
+            game_state = 'lose'
+
+        if game_state == 'won':
+            pygame.mixer.music.stop()
+            window.blit(win_bg, (0,0))
+            if not victory_sound_played:
+                victory_sound.play()
+                victory_sound_played = True
+            if start_button.draw():
+                reset_game()
+                game_state = 'playing'
+                victory_sound_played = False
+        
+        if game_state == 'lose':
             # display game over
             window.fill(black)
-            window.blit(game_over_img, (250, 150))
+            window.blit(game_over_img, (225, 200))
+            pygame.mixer.music.stop()
             if not game_over_sound_played:
                 game_over_sound.play()
                 game_over_sound_played = True
-            if start_button.draw(): # not done, has error
+            if start_button.draw():
                 reset_game()
-                game_over_sound_played = False  # reset flag for next game over
+                game_state = 'playing'
+                game_over_sound_played = False  # reset flag for next game over sound
 
         pygame.display.update()
     pygame.quit()
