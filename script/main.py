@@ -81,6 +81,8 @@ def reset_game():
     item_box_group.empty()
     score_system.score = 0
     enemy_spawner.last_spawn_time = pygame.time.get_ticks()
+    if not pygame.mixer.music.get_busy():
+        pygame.mixer.music.play(-1, 0.0)
     
     zombie_man = Zombie(500, 475, ZOMBIE_MAN_DATA, **ZOMBIE_TYPES['normal'])
     zombie_man.load_animation('idle', 'zombie_man_animation/Idle.png', 8)
@@ -180,7 +182,6 @@ if __name__ == "__main__":
     game_state = 'playing'
     game_over_sound_played = False
     victory_sound_played = False
-
     while running:
         current_time = pygame.time.get_ticks()
         clock.tick(frames_per_sec)
