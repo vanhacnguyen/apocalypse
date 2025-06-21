@@ -14,8 +14,8 @@ mixer.init()
 pygame.mixer.music.load('music_and_sound/apocalyptic_forest.mp3')
 game_over_sound = pygame.mixer.Sound('music_and_sound/game_over_sound.mp3')
 victory_sound = pygame.mixer.Sound('music_and_sound/victory_sound.mp3')
-pygame.mixer.music.set_volume(0.25)
-pygame.mixer.music.play(-1, 0.0, 4000)
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1, 0.0, 3000)
 
 
 WINDOW_WIDTH, WINDOW_HEIGHT = 800, 600
@@ -57,7 +57,7 @@ class Button():
         return action
 
 # create button instance
-start_button = Button(275, 440, restart_img, 0.4)
+start_button = Button(275, 420, restart_img, 0.4)
 
 pygame.font.init()
 #define font
@@ -69,6 +69,10 @@ def draw_text(text, font, text_color, x, y):
     window.blit(img, (x, y))
     window.blit(score, (x, y))
 
+def stop_all_sounds():
+    pygame.mixer.music.stop()
+    pygame.mixer.stop()  # stops all active sound effects
+    
 def reset_game():
     global player, all_zombies, item_box_group, score_system, enemy_spawner
     
@@ -192,13 +196,13 @@ if __name__ == "__main__":
         draw_text(f'SCORE: {score_system.score}', font, white, 40, 110)
         draw_text(f'HIGHEST SCORE: {score_system.high_score}', font, white, 40, 140)
 
-        player.move(WINDOW_WIDTH, WINDOW_HEIGHT, all_zombies, window)
+        player.move(WINDOW_WIDTH, WINDOW_HEIGHT, all_zombies)
         
         #update everything
         enemy_spawner.update(current_time, all_zombies, item_box_group, player, score_system, WINDOW_WIDTH, WINDOW_HEIGHT)
         for zombie in all_zombies[:]:  # use slice copy to allow removal during iteration
             zombie.update(item_box_group, player, score_system)
-            zombie.ai(WINDOW_WIDTH, WINDOW_HEIGHT, player, window)
+            zombie.ai(WINDOW_WIDTH, WINDOW_HEIGHT, player)
             
             # remove zombies that finished their death animation
             if zombie.dead and zombie.action == 'dead' and zombie.frame_index >= len(zombie.animations['dead']) - 1:
@@ -225,9 +229,9 @@ if __name__ == "__main__":
             game_state = 'lose'
 
         if game_state == 'won':
-            pygame.mixer.music.stop()
             window.blit(win_bg, (0,0))
             if not victory_sound_played:
+                stop_all_sounds()
                 victory_sound.play()
                 victory_sound_played = True
             if start_button.draw():
@@ -238,9 +242,9 @@ if __name__ == "__main__":
         if game_state == 'lose':
             # display game over
             window.fill(black)
-            window.blit(game_over_img, (225, 200))
-            pygame.mixer.music.stop()
+            window.blit(game_over_img, (225, 150))
             if not game_over_sound_played:
+                stop_all_sounds()
                 game_over_sound.play()
                 game_over_sound_played = True
             if start_button.draw():

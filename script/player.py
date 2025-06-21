@@ -1,7 +1,6 @@
 import pygame
 from bullet import Bullet
 from health_bar import Health_bar
-from colors import *
 from pygame import mixer
 
 mixer.init()
@@ -45,7 +44,7 @@ class Player():
         self.walking_sound = pygame.mixer.Sound('music_and_sound/walking_grass.mp3')
         self.reloading_sound = pygame.mixer.Sound('music_and_sound/gun_reload_sound.mp3')
         self.shooting_sound = pygame.mixer.Sound('music_and_sound/gun_shot_sound.mp3')
-        self.shooting_sound.set_volume(0.1)
+        self.shooting_sound.set_volume(0.2)
         self.swinging_sound = pygame.mixer.Sound('music_and_sound/swinging_sound.mp3')
     
     def reset(self, x, y, data): # reset the game
@@ -81,7 +80,7 @@ class Player():
             frames.append(scaled_frame)
         self.animations[action_name] = frames # store complete animation in a list under its action
     
-    def move(self, screen_width, screen_height, target, window):
+    def move(self, screen_width, screen_height, target):
         SPEED = 4
         GRAVITY = 2
         GROUND_LEVEL = screen_height - 40
@@ -132,7 +131,7 @@ class Player():
             if not self.hurt:
                 # attack 
                 if keys[pygame.K_q]:
-                    self.attack(target, window)
+                    self.attack(target)
                 # shoot
                 elif keys[pygame.K_SPACE] and self.shoot_cooldown <= 0:
                     self.shoot()
@@ -216,14 +215,13 @@ class Player():
                 if self.action == 'recharge':
                     self.recharge_gun = False
     
-    def attack(self, targets, window):
+    def attack(self, targets):
         if self.attack_cooldown <= 0:
             self.attacking = True
             self.swinging_sound.play()
             # adjust attack based on flip
             attack_x = self.rect.left - 25 if self.flip else self.rect.right
             attacking_rect = pygame.Rect(attack_x - 10, self.rect.y, self.rect.width + 10, self.rect.height)
-            pygame.draw.rect(window, (255, 0, 0), attacking_rect, 2)
             for zombie in targets:
                 if attacking_rect.colliderect(zombie.rect): 
                     zombie.health -= 25

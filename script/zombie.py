@@ -2,7 +2,6 @@ import pygame
 import random
 from health_bar import Health_bar
 from item_box import ItemBox
-from colors import *
 from pygame import mixer
 
 mixer.init()
@@ -47,7 +46,7 @@ class Zombie():
             frames.append(scaled_frame)
         self.animations[action_name] = frames # store complete animation in a list under its action name in a dictionary
     
-    def ai(self, screen_width, screen_height, target, screen):
+    def ai(self, screen_width, screen_height, target):
         if not self.dead and not target.dead:
             # set direction based on spawn position
             if self.rect.centerx < target.rect.centerx:
@@ -55,12 +54,11 @@ class Zombie():
             else:
                 self.move_direction = -1  # face left if player is on the left
             
-            self.move(screen_width, screen_height, target, screen)
+            self.move(screen_width, screen_height, target)
 
 
-    def move(self, screen_width, screen_height, target, screen):
+    def move(self, screen_width, screen_height, target):
         SPEED = self.chase_speed
-        GRAVITY = 2
         GROUND_LEVEL = screen_height - 40
         dx = 0
         dy = 0
@@ -179,7 +177,7 @@ class Zombie():
             self.attack_cooldown = 30
 
     def drop_item(self, item_box_group, player):
-        # randomly drop item when zombie dies
+        # randomly drop item when zombie dies at 80%
         if random.random() < 0.8:
             item_type = random.choice(['health', 'ammo'])
             item_box = ItemBox(item_type, self.rect.centerx, self.rect.centery + 10, player)
@@ -187,7 +185,6 @@ class Zombie():
             
 
     def draw(self, surface):
-        pygame.draw.rect(surface, blue, self.rect)
         current_offset = self.offset_list
         self.health_bar.x = self.rect.x
         self.health_bar.y = self.rect.y - 15
